@@ -1,10 +1,10 @@
-import java.net.Socket;
-import java.net.InetAddress;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.net.ServerSocket;
-import java.io.Serializable;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 
 // Define the Message class
@@ -21,7 +21,7 @@ class Message implements Serializable {
 class Client extends Thread {
     public void run() {
         try {
-            InetAddress host = InetAddress.getLocalHost();
+            InetAddress host = InetAddress.getLocalHost(); //InetAddress.getLocalHost() returns the address of the local host
             for (int x = 0; x < 5; x++) {
                 try (
                     Socket socket = new Socket(host.getHostName(), 4444);
@@ -61,7 +61,7 @@ class Server extends Thread {
 
                     // Reply with a Message object
                     oos.writeObject(new Message("Server Reply", message.code + 1));
-                    oos.flush();
+                    oos.flush(); // flush method hace que se envie el mensaje al servidor inmediatamente
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
