@@ -5,23 +5,27 @@ public class lab5prog04Multiple {
     public static void main(String[] args) {
         new Server().start();
         // Multiple clients can be started from different terminals or by adding more lines here
-        // new Client().start();
+        new Client().start();
     }
 }
 
 class Server extends Thread {
     public void run() {
         try (ServerSocket server = new ServerSocket(4444)) {
+            System.out.println("Server started on port 4444");
             while (true) {
                 try {
                     Socket socket = server.accept(); // Accept a new client connection
+                    System.out.println("Client connected");
                     new ClientHandler(socket).start(); // Handle each client in a separate thread
                 } catch (IOException e) {
-                    e.printStackTrace(); // Handle exceptions for server socket
+                    System.err.println("Error accepting client connection: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace(); // Log exception for debugging
+            System.err.println("Error starting server: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
@@ -45,8 +49,19 @@ class ClientHandler extends Thread {
                 oos.writeObject("Server Reply");
                 oos.flush();
             }
-        } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Connection with client lost.");
+        } catch (IOException e) {
+            System.err.println("I/O error with client: " + e.getMessage());
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            System.err.println("Class not found error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                System.err.println("Error closing socket: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 }
@@ -64,8 +79,12 @@ class Client extends Thread {
                 String message = (String) ois.readObject();
                 System.out.println("Client Received: " + message);
             }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace(); // Log exception for debugging
+        } catch (IOException e) {
+            System.err.println("I/O error communicating with server: " + e.getMessage());
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            System.err.println("Class not found error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

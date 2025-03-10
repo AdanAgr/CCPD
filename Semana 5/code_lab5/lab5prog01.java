@@ -1,15 +1,15 @@
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 
 public class lab5prog01 {
     public static void main(String[] args) {
-        // Reading from "input.txt"
+        // READING from "input.txt"
         try (InputStream inputStream = new FileInputStream("input.txt");
              Reader inputStreamReader = new InputStreamReader(inputStream)) {
             
@@ -29,7 +29,7 @@ public class lab5prog01 {
             e.printStackTrace();
         }
 
-        // Writing to "output.txt"
+        // WRITING to "output.txt"
         try (OutputStream outputStream = new FileOutputStream("output.txt");
              Writer outputStreamWriter = new OutputStreamWriter(outputStream)) {
             
