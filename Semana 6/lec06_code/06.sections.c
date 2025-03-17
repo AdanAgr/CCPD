@@ -1,7 +1,11 @@
 // 06.sections.c
 
+#include <windows.h>
 #include <omp.h>
 #include <stdio.h>
+#include <time.h>
+
+
 int main (int argc, char *argv[])
 {
    #pragma omp parallel
@@ -15,21 +19,21 @@ int main (int argc, char *argv[])
          {
             printf("Sección 1  -  Hilo %d\n",
             omp_get_thread_num());
-            usleep(500000);
+            Sleep(500);
          }
 
          #pragma omp section
          {
             printf("Sección 2  -  Hilo %d\n",
             omp_get_thread_num());
-            usleep(400000);
+            Sleep(400);
          }
 
          #pragma omp section
          {
             printf("Sección 3  -  Hilo %d\n",
             omp_get_thread_num());
-            usleep(50000);
+            Sleep(500);
          }
       }
    }

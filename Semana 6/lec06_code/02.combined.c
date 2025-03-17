@@ -20,6 +20,7 @@ int main()
       // C <- C + A x B
 #ifdef _OPENMP
       #pragma omp parallel for shared(a,b,c)
+      
 #endif
       for (int i = 0; i < size; ++i) {
             for (int j = 0; j < size; ++j) {

@@ -4,7 +4,7 @@
 #include <omp.h>
 #include <stdio.h>
 #include <time.h>
-
+#include <windows.h>
 int main (int argc, char *argv[])
 {
    int TID;
@@ -14,7 +14,7 @@ int main (int argc, char *argv[])
       time_t now;
       TID = omp_get_thread_num();
       if (TID < omp_get_num_threads() / 2) {
-         usleep(2000000);
+         Sleep(2000);
 
       }
       now = time (0);

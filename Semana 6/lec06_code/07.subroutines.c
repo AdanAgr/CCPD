@@ -1,6 +1,8 @@
 // 07.subroutines.c
 #include <omp.h>
 #include <stdio.h>
+#include <windows.h>
+
 int main (int argc, char *argv[])
 {
    void CuentaAtras() {
@@ -9,7 +11,7 @@ int main (int argc, char *argv[])
              omp_get_thread_num());
       for (cont = 10; cont >= 0; cont--) {
          printf("**** %d ****\n", cont);
-         usleep(500000);
+         Sleep(500);
       }
       printf("**** Cuenta atrás finalizada ****\n");
    }
@@ -20,7 +22,7 @@ int main (int argc, char *argv[])
              omp_get_thread_num());
       for (cont = 0; cont <= 10; cont++) {
          printf("#### %d ####\n", cont);
-         usleep(1000000);
+         Sleep(1000);
       }
       printf("#### Cuenta adelante finalizada ####\n");
    }

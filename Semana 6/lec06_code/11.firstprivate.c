@@ -14,4 +14,3 @@ int main (int argc, char *argv[])
            omp_get_thread_num(), x, y);
    }
 }
----
