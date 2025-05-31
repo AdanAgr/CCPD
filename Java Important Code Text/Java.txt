@@ -1,0 +1,625 @@
+#✅ Tema 1: Input/Output Stream (Lab5prog01)
+try (InputStream inputStream = new FileInputStream("input.txt");
+     Reader reader = new InputStreamReader(inputStream)) {
+    int data = reader.read();
+    StringBuilder inputContent = new StringBuilder();
+    while (data != -1) {
+        char theChar = (char) data;
+        inputContent.append(theChar);
+        data = reader.read();
+    }
+    System.out.println(inputContent.toString());
+} catch (Exception e) {
+    e.printStackTrace();
+}
+
+try (OutputStream outputStream = new FileOutputStream("output.txt");
+     Writer writer = new OutputStreamWriter(outputStream)) {
+    writer.write("Hello World");
+} catch (Exception e) {
+    e.printStackTrace();
+}
+--------------------------------------
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+
+public class IOExample {
+    public static void main(String[] args) {
+
+        // READING from "input.txt"
+        try (InputStream inputStream = new FileInputStream("input.txt");
+             Reader inputStreamReader = new InputStreamReader(inputStream)) {
+
+            int data = inputStreamReader.read();
+            StringBuilder inputContent = new StringBuilder();
+
+            while (data != -1) {
+                char theChar = (char) data;
+                inputContent.append(theChar);
+                data = inputStreamReader.read();
+            }
+
+            // Just to demonstrate, print the content read from file
+            System.out.println(inputContent.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // WRITING to "output.txt"
+        try (OutputStream outputStream = new FileOutputStream("output.txt");
+             Writer outputStreamWriter = new OutputStreamWriter(outputStream)) {
+
+            outputStreamWriter.write("Hello World");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+#✅ Tema 2: Locks y ReentrantLock
+ReentrantLock lock = new ReentrantLock();
+
+try {
+    lock.lock();
+    // Sección crítica
+} finally {
+    lock.unlock();
+}
+--------
+public class Node<T> {
+    T item;
+    int key;
+    Node<T> next;
+    final Lock lock = new ReentrantLock();
+
+    public Node(T item) {
+        this.item = item;
+        this.key = item.hashCode();
+    }
+}
+
+public class OptimisticList<T> {
+    private final Node<T> head;
+    private final Node<T> tail;
+
+    public OptimisticList() {
+        head = new Node<>(Integer.MIN_VALUE);
+        tail = new Node<>(Integer.MAX_VALUE);
+        head.next = tail;
+    }
+
+    public boolean add(T item) {
+        int key = item.hashCode();
+        while (true) {
+            Node<T> pred = head;
+            Node<T> curr = pred.next;
+            while (curr.key < key) {
+                pred = curr;
+                curr = curr.next;
+            }
+            pred.lock.lock();
+            curr.lock.lock();
+            try {
+                if (validate(pred, curr)) {
+                    if (curr.key == key) {
+                        return false; // Element already exists
+                    } else {
+                        Node<T> node = new Node<>(item);
+                        node.next = curr;
+                        pred.next = node;
+                        return true; // Inserted successfully
+                    }
+                }
+            } finally {
+                curr.lock.unlock();
+                pred.lock.unlock();
+            }
+        }
+    }
+
+    private boolean validate(Node<T> pred, Node<T> curr) {
+        Node<T> node = head;
+        while (node.key <= pred.key) {
+            if (node == pred) {
+                return pred.next == curr;
+            }
+            node = node.next;
+        }
+        return false;
+    }
+}
+--------
+import java.util.concurrent.locks.ReentrantLock;
+
+class Shared {
+    static int count = 0;
+}
+
+class LockThread implements Runnable {
+    String name;
+    ReentrantLock lock;
+    Shared shObj;
+
+    LockThread(ReentrantLock lock, Shared shObj, String name) {
+        this.lock = lock;
+        this.shObj = shObj;
+        this.name = name;
+    }
+
+    @Override
+    public void run() {
+        System.out.println("Start: " + name);
+        System.out.println("waiting: " + name);
+        try {
+            lock.lock(); // Bloquea hasta que el lock esté disponible
+            System.out.println("locked: " + name);
+            Shared.count++;
+            System.out.println(Shared.count);
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            System.out.println(name + " interrupted.");
+        } finally {
+            System.out.println("unlock: " + name);
+            lock.unlock(); // Libera el lock
+        }
+    }
+}
+
+public class LockDemo {
+    public static void main(String[] args) {
+        Shared sbar = new Shared();
+        ReentrantLock lock = new ReentrantLock();
+
+        new Thread(new LockThread(lock, sbar, "A")).start();
+        new Thread(new LockThread(lock, sbar, "B")).start();
+    }
+}
+
+
+#✅ Tema 3: Semáforo (usando clase Semaphore)
+Semaphore semaphore = new Semaphore(2);
+
+new Thread(() -> {
+    try {
+        semaphore.acquire();
+        // Simulate work
+        Thread.sleep(1000);
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    } finally {
+        semaphore.release();
+    }
+}).start();
+
+#✅ Tema 4: Semáforo con wait/notify
+public class MySemaphore {
+    private int permits;
+
+    public MySemaphore(int permits) {
+        this.permits = permits;
+    }
+
+    public synchronized void acquire() throws InterruptedException {
+        while (permits == 0)
+            wait(); // Espera si no hay permisos disponibles
+        permits--; // Consume un permiso
+    }
+
+    public synchronized void release() {
+        permits++; // Libera un permiso
+        notify(); // Notifica a un hilo en espera
+    }
+}
+----------
+import java.util.concurrent.Semaphore;
+
+class SharedResource {
+    // Simulate a shared resource
+}
+
+class Worker implements Runnable {
+    private final Semaphore semaphore;
+    private final String workerName;
+
+    public Worker(Semaphore semaphore, String workerName) {
+        this.semaphore = semaphore;
+        this.workerName = workerName;
+    }
+
+    @Override
+    public void run() {
+        try {
+            System.out.println(workerName + " is trying to acquire the semaphore.");
+            semaphore.acquire(); // ADQUIERE EL SEMÁFORO
+
+            // Simulate work by sleeping the thread
+            Thread.sleep(1000);
+
+            System.out.println(workerName + " has released the semaphore.");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            semaphore.release(); // LIBERA el semáforo después de hacer el trabajo
+        }
+    }
+}
+
+public class SemaphoreExample {
+    public static void main(String[] args) {
+        Semaphore semaphore = new Semaphore(2); // Semáforo con 2 permisos
+
+        new Thread(new Worker(semaphore, "Worker 1")).start();
+        new Thread(new Worker(semaphore, "Worker 2")).start();
+        new Thread(new Worker(semaphore, "Worker 3")).start();
+    }
+}
+
+
+#✅ Tema 5: Cliente/Servidor (Sockets)
+// Crear un socket (cliente)
+Socket socket = new Socket("localhost", 80);
+
+// Enviar datos a través del socket
+OutputStream out = socket.getOutputStream();
+out.write("some data".getBytes());
+out.flush();
+out.close();
+
+// Cerrar el socket
+socket.close();
+
+// Leer de un socket (cliente)
+Socket socket = new Socket("localhost", 80);
+InputStream in = socket.getInputStream();
+
+int data = in.read();
+// ... read more data ...
+
+in.close();
+socket.close();
+---------------------
+import java.io.*;
+import java.net.*;
+
+public class MySockets {
+
+    // Clase que implementa Serializable
+    public static class Message implements Serializable {
+        public String msg;
+        public int code;
+
+        public Message(String msg, int code) {
+            this.msg = msg;
+            this.code = code;
+        }
+    }
+
+    // Servidor
+    static class Server extends Thread {
+        public void run() {
+            try (ServerSocket server = new ServerSocket(4444)) {
+                while (true) { // Bucle infinito (servidor siempre en ejecución)
+                    Socket socket = server.accept();
+
+                    // Recibe el objeto Message del cliente
+                    ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+                    Message message = (Message) ois.readObject();
+                    System.out.println("Server Received: " + message.msg + " with code " + message.code);
+
+                    // Responde al cliente
+                    ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+                    oos.writeObject(new Message("Server Reply", message.code + 1));
+
+                    ois.close();
+                    oos.close();
+                    socket.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Cliente
+    static class Client extends Thread {
+        public void run() {
+            try {
+                InetAddress host = InetAddress.getLocalHost();
+
+                for (int x = 0; x < 5; x++) {
+                    Socket socket = new Socket(host.getHostName(), 4444);
+
+                    // Enviar objeto Message al servidor
+                    ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+                    Message messageToSend = new Message("Client Message " + x, x);
+                    oos.writeObject(messageToSend);
+
+                    // Recibir respuesta del servidor
+                    ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+                    Message receivedMessage = (Message) ois.readObject();
+                    System.out.println("Client Received: " + receivedMessage.msg + " with code " + receivedMessage.code);
+
+                    oos.close();
+                    ois.close();
+                    socket.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new Server().start();
+        new Client().start();
+    }
+}
+
+
+
+#✅ Tema 6: 3 formas canonicas
+#1 condiciones array
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ThreadOrderingMain {
+    public static void main(String[] args) {
+        final int numberOfThreads = 5;
+        ReentrantLock lock = new ReentrantLock();
+        List<Thread> threads = new ArrayList<>();
+
+        // Crear hilos en orden inverso
+        for (int i = numberOfThreads; i > 0; i--) {
+            Thread thread = new Thread(new WorkerThread(i, numberOfThreads, lock));
+            threads.add(thread);
+            thread.start();
+        }
+
+        // Iniciar el primer hilo
+        lock.lock();
+        try {
+            if (numberOfThreads > 0) {
+                WorkerThread.getCondition(numberOfThreads).signal();
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        // Esperar a que todos los hilos terminen
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        System.out.println("All threads have executed.");
+    }
+}
+
+class WorkerThread implements Runnable {
+    private static final ReentrantLock lock = new ReentrantLock();
+    private static Condition[] conditions;
+    private static int currentMaxId;
+    private final int threadId;
+
+    public WorkerThread(int id, int maxId, ReentrantLock l) {
+        this.threadId = id;
+        currentMaxId = maxId;
+
+        if (conditions == null) {
+            conditions = new Condition[maxId + 1];
+            for (int i = 1; i <= maxId; i++) {
+                conditions[i] = lock.newCondition();
+            }
+        }
+    }
+
+    public static Condition getCondition(int index) {
+        return conditions[index];
+    }
+
+    @Override
+    public void run() {
+        lock.lock();
+        try {
+            while (threadId != currentMaxId) {
+                conditions[threadId].await();
+            }
+            // Sección crítica
+            System.out.println("Thread with ID " + threadId + " entering critical section.");
+            Thread.sleep(1000); // Simula trabajo
+            System.out.println("Thread with ID " + threadId + " leaving critical section.");
+
+            currentMaxId--;
+            if (currentMaxId > 0) {
+                conditions[currentMaxId].signal();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+
+
+#✅ Tema 7: Doubly Linked List sincronizada (Coarse/Fine Grain)
+#Coarse Grain:
+class CoarseList<T> {
+    private final Node<T> head;
+
+    public CoarseList() {
+        head = new Node<>(Integer.MIN_VALUE);
+        head.next = new Node<>(Integer.MAX_VALUE);
+    }
+
+    public synchronized boolean add(T item) {
+        int key = item.hashCode();
+        Node<T> pred = head;
+        Node<T> curr = head.next;
+
+        while (curr.key < key) {
+            pred = curr;
+            curr = curr.next;
+        }
+
+        if (curr.key == key) {
+            return false; // Ya existe
+        } else {
+            Node<T> node = new Node<>(item);
+            node.next = curr;
+            pred.next = node;
+            return true;
+        }
+    }
+
+    public synchronized boolean remove(T item) {
+        int key = item.hashCode();
+        Node<T> pred = head;
+        Node<T> curr = head.next;
+
+        while (curr.key < key) {
+            pred = curr;
+            curr = curr.next;
+        }
+
+        if (curr.key == key) {
+            pred.next = curr.next;
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+#Fine Grain:
+class FineList<T> {
+    private final Node<T> head;
+
+    public FineList() {
+        head = new Node<>(Integer.MIN_VALUE);
+        head.next = new Node<>(Integer.MAX_VALUE);
+    }
+
+    public boolean add(T item) {
+        int key = item.hashCode();
+        head.lock.lock();
+        Node<T> pred = head;
+        Node<T> curr = head.next;
+        curr.lock.lock();
+        try {
+            while (curr.key < key) {
+                pred.lock.unlock();
+                pred = curr;
+                curr = curr.next;
+                curr.lock.lock();
+            }
+
+            if (curr.key == key) {
+                return false; // Ya existe
+            } else {
+                Node<T> node = new Node<>(item);
+                node.next = curr;
+                pred.next = node;
+                return true;
+            }
+        } finally {
+            curr.lock.unlock();
+            pred.lock.unlock();
+        }
+    }
+
+    public boolean remove(T item) {
+        int key = item.hashCode();
+        head.lock.lock();
+        Node<T> pred = head;
+        Node<T> curr = head.next;
+        curr.lock.lock();
+        try {
+            while (curr.key < key) {
+                pred.lock.unlock();
+                pred = curr;
+                curr = curr.next;
+                curr.lock.lock();
+            }
+
+            if (curr.key == key) {
+                pred.next = curr.next;
+                return true;
+            } else {
+                return false;
+            }
+        } finally {
+            curr.lock.unlock();
+            pred.lock.unlock();
+        }
+    }
+}
+
+class Node<T> {
+    T item;
+    int key;
+    Node<T> next;
+    final ReentrantLock lock = new ReentrantLock();
+
+    public Node(T item) {
+        this.item = item;
+        this.key = item.hashCode();
+    }
+}
+
+#bloques synchronized y señales wait/notify
+class A {
+    public synchronized void enterAndWait(int threadId) {
+        try {
+            System.out.println("Start Thread " + threadId);
+            Thread.sleep((int)(Math.random() * 100));
+            System.out.println("Finish Thread " + threadId);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class B extends Thread {
+    private A a;
+    private int threadId;
+
+    public B(A a, int threadId) {
+        this.a = a;
+        this.threadId = threadId;
+    }
+
+    public void run() {
+        synchronized(a) {
+            while (!a.isMyTurn(threadId)) {
+                try {
+                    a.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            a.enterAndWait(threadId);
+            a.notifyAll();
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        A a = new A();
+        // Crear y lanzar hilos B con referencias a A
+    }
+}
